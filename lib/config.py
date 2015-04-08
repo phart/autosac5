@@ -38,22 +38,28 @@ def get_gateway_conf():
     """
     Return the default network gateway.
 
+    NOTE we are parsing netstat -rn vs files because of inconsistencies between
+    versions.
+
     Inputs:
         None
     Outputs:
         gateway (str): Default network gateway
     """
     gateway = None
-    f = "/etc/defaultrouter"
 
-    fh = open(f, "r")
-    for line in fh:
-        if line.startswith("#"):
-            continue
-        # Match a valid IP address
-        elif re.match(r"^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$", line):
-            gateway = line.strip()
+    cmd = "route get default"
+    try:
+        output = execute(cmd)
+    except Retcode, r:
+        raise
+
+    for l in output.splitlines():
+        if l.strip().startswith("gateway"):
+            gateway = l.split(":")[1].strip()
             break
+
+    logger.debug("The network gateway is %s" % gateway)
 
     return gateway
 
