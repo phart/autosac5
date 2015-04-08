@@ -22,7 +22,7 @@ from lib.checks import *
 
 version = "1.0b"
 output_d = "/var/tmp/autosac"
-output_f = "%s-nexenta-autosac.json" \
+output_f = "nexenta-autosac-%s.json" \
                % time.strftime('%Y%m%d.%H%M%S', time.localtime(time.time()))
 log = "etc/logging.conf"
 config = "etc/autosac.json"
