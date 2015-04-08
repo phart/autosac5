@@ -114,7 +114,7 @@ def write_output(f, output):
 
     # Dump the output dictionary in JSON format to the file
     try:
-        simplejson.dump(output, fh)
+        simplejson.dump(output, fh, indent=4 * ' ')
     except Exception, e:
         logger.error("Failed to write output to file")
         logger.error(str(e))
