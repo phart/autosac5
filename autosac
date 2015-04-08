@@ -126,7 +126,7 @@ def write_output(f, output):
 def main():
     # Parse command line arguments
     try:
-        opts, args = getopt.getopt(sys.argv[1:], ":ho:", ["help", "config="])
+        opts, args = getopt.getopt(sys.argv[1:], ":hc:", ["help", "config="])
     except getopt.GetoptError as g:
         print str(g)
         usage()
