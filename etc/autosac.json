@@ -49,6 +49,13 @@
                 "f": "check_rsf_failover",
                 "args": [],
                 "kwargs": {}
+            },
+            {
+                "name": "check_domain_ping",
+                "enabled": true,
+                "f": "check_domain_ping",
+                "args": [],
+                "kwargs": {}
             }
     ]
 }
