@@ -31,6 +31,8 @@ def get_hostname():
     """
     hostname = socket.gethostname()
 
+    logger.debug("System hostname is %s" % hostname)
+
     return hostname
 
 
@@ -79,7 +81,9 @@ def get_dns_conf():
     fh = open(f, "r")
     for line in fh:
         if line.startswith("nameserver"):
-            dns.append(line.split()[1].strip())
+            d = line.split()[1].strip()
+            logger.debug("Network nameserver %s" % d)
+            dns.append(d)
 
     return dns
 
@@ -94,17 +98,22 @@ def get_domain_conf():
         domain (dict): Domain information
     """
     domain = {}
-    cmd = "nltest /dsgetdcname"
 
+    cmd = "nltest /dsgetdcname"
     try:
         output = execute(cmd)
-    except Retcode:
-        return None
+    except Retcode, r:
+        # nltest return 1 when domain controller not found
+        if r.retcode == 1:
+            raise RuntimeError("Domain controller not found")
+        else:
+            raise
 
     # Parse all but the first line which contains header text
     for line in output.splitlines()[1:]:
         k, v = [x.strip() for x in line.split(":")]
         k = k.lower().replace(" ", "_")
+        logger.debug("Domain %s: %s" % (k, v))
         domain[k] = v
 
     return domain
@@ -125,20 +134,26 @@ def get_nmv_conf():
     apache_conf = "/etc/apache2/2.2/conf.d/nmv.conf"
     apache_conf_ssl = "/etc/apache2/2.2/conf.d/nmv-ssl.conf"
 
+    # HTTP
     if os.path.isfile(apache_conf):
+        logger.debug("NMV is running on http")
         # Parse conf file for port
         fh = open(apache_conf, "r")
         for line in fh:
             if line.startswith("NameVirtualHost"):
                 port = line.split(":")[1].strip()
+                logger.debug("NMV is running on port %s" % port)
                 break
+    # HTTPS
     elif os.path.isfile(apache_conf_ssl):
+        logger.debug("NMV is running on https")
         https = True
         # Parse conf file for port
         fh = open(apache_conf_ssl, "r")
         for line in fh:
             if line.startswith("NameVirtualHost"):
                 port = line.split(":")[1].strip()
+                logger.debug("NMV is running on port %s" % port)
                 break
     else:
         raise RuntimeError("NMV Apache configuration does not exist")
@@ -206,6 +221,8 @@ def _get_rsf_name():
         if l.startswith("Contacted"):
             name = l.split()[4].rstrip(",").strip("\"")
 
+    logger.debug("RSF cluster name is %s" % name)
+
     return name
 
 
@@ -231,6 +248,7 @@ def _get_rsf_services():
         # Check if service is stopped
         if host == "-":
             host = None
+        logger.debug("RSF service %s is running on %s" % (svc, host))
         services[svc] = host
 
     return services
@@ -248,8 +266,10 @@ def _get_rsf_isrunning():
     try:
         output = execute("%s isrunning" % _rsfcli)
     except Retcode:
+        logger.debug("RSF service is disabled")
         isrunning = False
     else:
+        logger.debug("RSF service is enabled")
         isrunning = True
 
     return isrunning
@@ -276,5 +296,7 @@ def _get_rsf_partner():
         if "*" not in l:
             partner = l.strip()
             break
+
+    logger.debug("RSF partner is %s" % partner)
 
     return partner
