@@ -50,7 +50,7 @@ def get_gateway_conf():
     """
     gateway = None
 
-    cmd = "route get default"
+    cmd = "route -n get default"
     try:
         output = execute(cmd)
     except Retcode, r:
@@ -134,36 +134,49 @@ def get_nmv_conf():
     apache_conf = "/etc/apache2/2.2/conf.d/nmv.conf"
     apache_conf_ssl = "/etc/apache2/2.2/conf.d/nmv-ssl.conf"
 
-    # HTTP
+    # Check for existince of Apache HTTP conf
     if os.path.isfile(apache_conf):
-        logger.debug("NMV is running on http")
+        logger.debug("NMV is not configured with https")
         # Parse conf file for port
-        fh = open(apache_conf, "r")
-        for line in fh:
-            if line.startswith("NameVirtualHost"):
-                port = line.split(":")[1].strip()
-                logger.debug("NMV is running on port %s" % port)
-                break
-    # HTTPS
+        port = _get_nmv_port(apache_conf)
+    # Check for the existince of Apache HTTPS conf
     elif os.path.isfile(apache_conf_ssl):
-        logger.debug("NMV is running on https")
+        logger.debug("NMV is configured with https")
         https = True
-        # Parse conf file for port
-        fh = open(apache_conf_ssl, "r")
-        for line in fh:
-            if line.startswith("NameVirtualHost"):
-                port = line.split(":")[1].strip()
-                logger.debug("NMV is running on port %s" % port)
-                break
+        port = _get_nmv_port(apache_conf_ssl)
     else:
-        raise RuntimeError("NMV Apache configuration does not exist")
+        raise RuntimeError("Apache configuration file does not exist")
 
     # If port is missing at this point the config is corrupt
     if port is None:
-        raise RuntimeError("NMV Apache configuration is corrupt")
+        raise RuntimeError("Apache configuration is corrupt")
 
     return port, https
 
+
+def _get_nmv_port(f):
+    """
+    Parse the apache configuration file for the port number.
+
+    Inputs:
+        f (str): Path to configuration file
+    Outputs:
+        port (int): Port number
+    """
+    port = None
+
+    try:
+        fh = open(f, "r")
+    except:
+        logger.error("Unable to open the Apache configuration file")
+        raise
+    for line in fh:
+        if line.startswith("NameVirtualHost"):
+            port = line.split(":")[1].strip()
+            logger.debug("NMV is running on port %s" % port)
+            break
+
+    return port
 
 def get_rsf_conf():
     """
