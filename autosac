@@ -179,7 +179,7 @@ def main():
         except Exception, e:
             logger.error("Check %s failed" % name)
             logger.error(str(e))
-    logger.info("Checks complete")
+    logger.info("Checks completed")
 
     # Write the data to the output file
     write_output(os.path.join(output_d, output_f), data)
