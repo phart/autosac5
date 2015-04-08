@@ -26,7 +26,7 @@ def check_ping(ip):
     Inputs:
         ip (str): IP address or hostname
     Outputs:
-        alive (bool): Is IP reachable
+        check (dict): Check results
     """
     # Network statistics
     check = {
@@ -41,8 +41,10 @@ def check_ping(ip):
     try:
         output = execute(cmd)
     except Retcode:
+        logger.debug("%s is not alive" % ip)
         check["status"] = False
     else:
+        logger.debug("%s is alive" % ip)
         check["status"] = True
         lline = output.splitlines()[-1]
         p_min, p_avg, p_max, p_stddev = lline.split("=")[1].strip().split("/")
@@ -61,7 +63,7 @@ def check_gateway_ping():
     Inputs:
         None
     Outputs:
-        ping (list): Ping statistics
+        check (dict): Check results
     """
     gateway = get_gateway_conf()
     check = check_ping(gateway)
@@ -76,7 +78,7 @@ def check_dns_ping():
     Inputs:
         None
     Outputs:
-        ping (dict): Ping statistics
+        check (dict): Check results
     """
     check = {}
     nameservers = get_dns_conf()
@@ -89,6 +91,14 @@ def check_dns_ping():
 
 
 def check_nmv_access():
+    """
+    Check access to the web interface.
+
+    Inputs:
+        None
+    Outputs:
+        check (dict): Check results
+    """
     check = {
         "status": None,
         "output": None
@@ -97,6 +107,7 @@ def check_nmv_access():
     try:
         port, https = get_nmv_conf()
     except RuntimeError, e:
+        logger.debug("Failed to read NMV configuration")
         check["status"] = False
         check["output"] = str(e)
         return check
@@ -106,18 +117,38 @@ def check_nmv_access():
     else:
         url = "http://localhost:%s/" % port
 
+    logger.debug("check_nmv_access verifying url %s" % url)
+
     # Try to open the url
     try:
         rc = urllib.urlopen(url)
     except IOError, e:
+        logger.debug("Failed to reach NMV")
         check["status"] = False
         check["output"] = str(e)
     else:
         if rc.code != 200:
             check["status"] = False
-            check["output"] = "HTTP status %d" % rc.code
+            check["output"] = "Failed with HTTP status %d" % rc.code
+            logger.debug(" HTTP status %s" % rc.code)
         else:
+            logger.debug("Succeeded")
             check["status"] = True
+
+    return check
+
+
+def check_domain_ping():
+    """
+    Check access and latency to the current domain server.
+
+    Inputs:
+        None
+    Outputs:
+        check (dict): Check results
+    """
+    domain = get_domain_conf()["dc_addr"]
+    check = check_ping(domain)
 
     return check
 
@@ -129,22 +160,27 @@ def check_cmd(cmd):
     Inputs:
         cmd (str): Bash command
     Outputs:
-        None
+        check (dict): Check results
     """
     check = {
         "status": None,
         "output": None
     }
 
+    logger.debug("check_cmd running \"%s\"" % cmd)
+
     try:
         output = execute(cmd)
     except Retcode, r:
+        logger.debug("Failed with non-zero return code")
         check["status"] = False
         check["output"] = r.output
     except Timeout, t:
+        logger.debug("Failed timed out")
         check["status"] = False
         check["output"] = str(t)
     else:
+        logger.debug("Succeeded")
         check["status"] = True
         check["output"] = output
 
@@ -158,22 +194,27 @@ def check_nmc_cmd(cmd):
     Inputs:
         cmd (str): Bash command
     Outputs:
-        None
+        check (dict): Check results
     """
     check = {
         "status": None,
         "output": None
     }
 
+    logger.debug("Running NMC command \"%s\"" % cmd)
+
     try:
         output = execute_nmc(cmd)
     except Retcode, r:
+        logger.debug("Failed with non-zero return code")
         check["status"] = False
         check["output"] = r.output
     except Timeout, t:
+        logger.debug("Failed timed out")
         check["rc"] = False
         check["output"] = str(t)
     else:
+        logger.debug("Succeeded")
         check["status"] = True
         check["output"] = output
 
@@ -187,25 +228,40 @@ def check_dns_lookup(name):
     Inputs:
         name (str): Domain name
     Outputs:
-        resolves (bool): Did resolution succeed
+        check (dict): Check results
     """
     check = {
         "status": None,
         "output": None
     }
 
+    logger.debug("Attempting DNS resolution of %s" % name)
+
     try:
         socket.gethostbyname(name)
     except socker.gaierror, e:
+        logger.debug("Failed to resolve")
         check["status"] = False
         check["output"] = str(e)
     else:
+        logger.debug("Succeeded")
         check["status"] = True
 
     return check
 
 
 def check_rsf_failover():
+    """
+    Check RSF service failover.
+
+    NOTE the check will only failover services that are active on the host the
+    check is running on.
+
+    Inputs:
+        None
+    Outputs:
+        check (dict): Check results
+    """
     check = {}
     hostname = get_hostname()
     name, partner, services = get_rsf_conf()
@@ -213,7 +269,10 @@ def check_rsf_failover():
     # Failover any services running on this node
     for service, host in services.iteritems():
         if host != hostname:
+            logger.debug("Fail over for %s skipped" % service)
             continue
+
+        logger.info("Failover %s to %s" % (service, hostname))
 
         cmd = "setup group rsf-cluster %s shared-volume %s failover %s" \
               % (name, service, partner)
