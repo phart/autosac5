@@ -91,7 +91,7 @@ def parse_config(f):
     vers = json["version"]
     checks = json["checks"]
 
-    return version, checks
+    return vers, checks
 
 
 def write_output(f, output):
