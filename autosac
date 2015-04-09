@@ -179,6 +179,7 @@ def main():
         except Exception, e:
             logger.error("Check %s failed" % name)
             logger.error(str(e))
+            logger.debug("Exception stack", exc_info=1)
     logger.info("Checks completed")
 
     # Write the data to the output file
