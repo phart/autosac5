@@ -88,10 +88,7 @@ def parse_config(f):
 
     # TODO validate the outline, for now we expect the user to format properly
 
-    vers = json["version"]
-    checks = json["checks"]
-
-    return vers, checks
+    return json
 
 
 def write_output(f, output):
@@ -152,7 +149,7 @@ def main():
     logging.config.fileConfig(log)
 
     # Parse the config file
-    cversion, checks = parse_config(config)
+    checks = parse_config(config)
 
     # Iinitialize the output dict
     data = {"results": {}}
@@ -160,8 +157,6 @@ def main():
     # Log the autosac and autosac.json versions
     logger.info("AutoSAC v%s" % version)
     data["autosac_version"] = version
-    logger.info("Configuration v%s" % cversion)
-    data["config_version"] = cversion
 
     # Iterate over each check
     for c in checks:
