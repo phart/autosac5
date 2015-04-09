@@ -10,7 +10,7 @@ William Kettler <william.kettler@nexenta.com>
 """
 
 import socket
-import urllib
+import urllib2
 import logging
 from execute import execute, execute_nmc, Retcode, Timeout
 from config import *
@@ -103,7 +103,11 @@ def check_nmv_access():
         "status": None,
         "output": None
     }
-    port, https = get_nmv_conf()
+    vers = get_major_vers()
+    if vers == 3:
+        port, https = get_nmv_conf_3()
+    else:
+        port, https = get_nmv_conf()
 
     if https:
         url = "https://localhost:%s/" % port
@@ -114,7 +118,7 @@ def check_nmv_access():
 
     # Try to open the url
     try:
-        rc = urllib.urlopen(url)
+        rc = urllib2.urlopen(url)
     except IOError, e:
         logger.error("Failed to reach NMV")
         logger.debug(str(e))

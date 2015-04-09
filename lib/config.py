@@ -240,6 +240,38 @@ def get_nmv_conf():
     return port, https
 
 
+def get_nmv_conf_3():
+    """
+    Legacy function for version 3.x. Return the NMV Apache configuration
+    details.
+
+    Inputs:
+        None
+    Ouputs:
+        port (int): Web port
+        https (bool): HTTPS enabled
+    """
+    port = None
+    https = False
+    apache_conf = "/etc/apache2/sites-enabled/nmv"
+    apache_conf_ssl = "/etc/apache2/sites-enabled/nmv-ssl"
+
+    # Check for existince of Apache HTTP conf
+    if os.path.isfile(apache_conf):
+        logger.debug("NMV is not configured with https")
+        # Parse conf file for port
+        port = _get_nmv_port(apache_conf)
+    # Check for the existince of Apache HTTPS conf
+    elif os.path.isfile(apache_conf_ssl):
+        logger.debug("NMV is configured with https")
+        https = True
+        port = _get_nmv_port(apache_conf_ssl)
+    else:
+        raise RuntimeError("Apache configuration file does not exist")
+
+    return port, https
+
+
 def _get_nmv_port(f):
     """
     Parse the apache configuration file for the port number.
