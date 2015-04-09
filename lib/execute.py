@@ -97,6 +97,8 @@ def execute(cmd, timeout=None):
     if retcode:
         raise Retcode(cmd, retcode, output=output)
 
+    logger.debug(output)
+
     return output
 
 
