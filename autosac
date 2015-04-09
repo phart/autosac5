@@ -164,18 +164,17 @@ def main():
         name = c["name"]
         # If the check is disabled log it and continue
         if not c["enabled"]:
-            logger.info("Check %s is disabled" % name)
+            logger.info("Check %s is disabled" % name.upper())
             continue
 
         # If the log is enabled execute the check as defined in the config
-        logger.info("Check %s in progress" % name)
+        logger.info("Check %s in progress" % name.upper())
         try:
             f = globals()[c["f"]]
             data["results"][name] = f(*c["args"], **c["kwargs"])
         except Exception, e:
-            logger.error("Check %s failed" % name)
             logger.error(str(e))
-            logger.debug("Exception stack", exc_info=1)
+            logger.debug("Exception stack", exc_info=True)
     logger.info("Checks completed")
 
     # Write the data to the output file
