@@ -20,6 +20,35 @@ _rsfcli = "/opt/HAC/RSF-1/bin/rsfcli -i0"
 logger = logging.getLogger(__name__)
 
 
+def get_major_vers():
+    """
+    Return major version number, i.e. for 4.0.3 we would return 4.
+
+    Inputs:
+        None
+    Outputs:
+        vers (int): Major version
+    """
+    vers = None
+
+    cmd = "uname -a"
+    try:
+        output = execute(cmd)
+    except:
+        logger.error("Failed to determine appliance version", exc_info=1)
+        raise RuntimeError("Failed to determine appliance version")
+
+    vers = output.split("NexentaOS_")[1]
+    if vers.startswith("134f"):
+        vers = 3
+    else:
+        vers = vers[0]
+
+    logger.debug("The appliance version is %s" % vers)
+
+    return vers
+
+
 def get_hostname():
     """
     Return the system hostname.
@@ -118,6 +147,42 @@ def get_domain_conf():
 
     return domain
 
+
+def get_domain_conf_3():
+    """
+    Legacy function for version 3.x. Returns domain configuration.
+
+    Inputs:
+        None
+    Outputs:
+        domain (str): DC IP
+    """
+    domain = {}
+
+    cmd = "smbadm list"
+    try:
+        output = execute(cmd)
+    except:
+        logger.error("Failed to determine appliance domain configuration",
+                     exc_info=1)
+        raise RuntimeError("Failed to determine appliance domain " \
+                           "configuration")
+
+    # Parse out domain name, DC hostname and IP
+    name, dc = output.splitlines()[1:3]
+    domain["domain_name"] = name.split()[1].lstrip("[").rstrip("]")
+    dc_name, dc_addr = dc.split()
+    domain["dc_name"] = dc_name.lstrip("[+").rstrip("]")
+    domain["dc_addr"] = dc_addr.lstrip("[").rstrip("]")
+
+    # Log and raise an exception if the dict is empty
+    # In theory if we make it this far domain should not be empty
+    if not domain:
+        logger.error("No domain configuration defined")
+        logger.error(output)
+        raise RuntimeError("No domain configuration defined")
+
+    return domain
 
 def get_nmv_conf():
     """

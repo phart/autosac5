@@ -147,7 +147,12 @@ def check_domain_ping():
     Outputs:
         check (dict): Check results
     """
-    domain = get_domain_conf()["dc_addr"]
+    vers = get_major_vers()
+    if vers == 3:
+        domain = get_domain_conf_3()["dc_addr"]
+    else:
+        domain = get_domain_conf()["dc_addr"]
+
     check = check_ping(domain)
 
     return check
