@@ -58,7 +58,11 @@ def get_hostname():
     Outputs:
         hostname (str): Hostname
     """
-    hostname = socket.gethostname()
+    try:
+        hostname = socket.gethostname()
+    except:
+        logger.error("Failed to determine appliance hostname", exc_info=1)
+        raise RuntimeError("Failed to determine appliance hostname")
 
     logger.debug("System hostname is %s" % hostname)
 
@@ -82,13 +86,19 @@ def get_gateway_conf():
     cmd = "route -n get default"
     try:
         output = execute(cmd)
-    except Retcode, r:
-        raise
+    except:
+        logger.error("Failed to determine network gateway", exc_info=1)
+        raise RuntimeError("Failed to determine network gateway")
 
     for l in output.splitlines():
         if l.strip().startswith("gateway"):
             gateway = l.split(":")[1].strip()
             break
+
+    if gateway is None:
+        logger.error("No network gateway defined")
+        logger.error(output)
+        raise RuntimeError("No network gateway defined")
 
     logger.debug("The network gateway is %s" % gateway)
 
@@ -107,12 +117,21 @@ def get_dns_conf():
     dns = []
     f = "/etc/resolv.conf"
 
-    fh = open(f, "r")
+    try:
+        fh = open(f, "r")
+    except:
+        logger.error("Unable to open resolv.conf", exc_info=1)
+        raise RuntimeError("Failed to determine appliance nameservers")
     for line in fh:
         if line.startswith("nameserver"):
             d = line.split()[1].strip()
             logger.debug("Network nameserver %s" % d)
             dns.append(d)
+
+    if len(dns) == 0:
+        logger.error("No network nameservers defined")
+        logger.error(fh.read())
+        raise RuntimeError("No network nameservers defined")
 
     return dns
 
@@ -131,12 +150,11 @@ def get_domain_conf():
     cmd = "nltest /dsgetdcname"
     try:
         output = execute(cmd)
-    except Retcode, r:
-        # nltest return 1 when domain controller not found
-        if r.retcode == 1:
-            raise RuntimeError("Domain controller not found")
-        else:
-            raise
+    except:
+        logger.error("Failed to determine appliance domain configuration",
+                     exc_info=1)
+        raise RuntimeError("Failed to determine appliance domain " \
+                           "configuration")
 
     # Parse all but the first line which contains header text
     for line in output.splitlines()[1:]:
@@ -144,6 +162,13 @@ def get_domain_conf():
         k = k.lower().replace(" ", "_")
         logger.debug("Domain %s: %s" % (k, v))
         domain[k] = v
+
+    # Log and raise an exception if the dict is empty
+    # In theory if we make it this far domain should not be empty
+    if not domain:
+        logger.error("No domain configuration defined")
+        logger.error(output)
+        raise RuntimeError("No domain configuration defined")
 
     return domain
 
@@ -212,10 +237,6 @@ def get_nmv_conf():
     else:
         raise RuntimeError("Apache configuration file does not exist")
 
-    # If port is missing at this point the config is corrupt
-    if port is None:
-        raise RuntimeError("Apache configuration is corrupt")
-
     return port, https
 
 
@@ -233,15 +254,23 @@ def _get_nmv_port(f):
     try:
         fh = open(f, "r")
     except:
-        logger.error("Unable to open the Apache configuration file")
-        raise
+        logger.error("Failed to open the Apache configuration file",
+                     exc_info=1)
+        raise RuntimeError("Failed to determine appliance NMV port")
     for line in fh:
         if line.startswith("NameVirtualHost"):
             port = line.split(":")[1].strip()
             logger.debug("NMV is running on port %s" % port)
             break
 
+    # If port is missing at this point the config is corrupt
+    if port is None:
+        logger.error("Apache configuration is corrupt")
+        logger.error(fh.read())
+        raise RuntimeError("Apache configuration is corrupt")
+
     return port
+
 
 def get_rsf_conf():
     """
@@ -261,14 +290,14 @@ def get_rsf_conf():
 
     # Make sure services are running
     if not _get_rsf_isrunning():
-        raise RuntimeError("Cluster services aren't running")
+        raise RuntimeError("RSF cluster services aren't running")
 
     # Get RSF cluster name
     name = _get_rsf_name()
 
     # Check for default 4.x configuration
     if name == "Ready_For_Cluster_Configuration":
-        raise RuntimeError("The cluster is unconfigured")
+        raise RuntimeError("RSF cluster services are unconfigured")
 
     # Get RSF partner hostname
     partner = _get_rsf_partner()
@@ -292,12 +321,18 @@ def _get_rsf_name():
     try:
         output = execute("%s status" % _rsfcli)
     except:
-        raise
+        logger.error("Failed to determine RSF cluster name", exc_info=1)
+        raise RuntimeError("Failed to determine RSF cluster name")
 
     # Parse the line that start with 'Contacted' for the cluster name
     for l in output.splitlines():
         if l.startswith("Contacted"):
             name = l.split()[4].rstrip(",").strip("\"")
+
+    if name is None:
+        logger.error("No RSF cluster name defined")
+        logger.error(output)
+        raise RuntimeError("No RSF cluster name defined")
 
     logger.debug("RSF cluster name is %s" % name)
 
@@ -318,7 +353,8 @@ def _get_rsf_services():
     try:
         output = execute("%s list" % _rsfcli)
     except:
-        raise
+        logger.error("Failed to determine RSF services", exc_info=1)
+        raise RunTimeError("Failed to determine RSF services")
 
     # Parse each line of otput and split on ':'
     for l in output.splitlines():
@@ -328,6 +364,11 @@ def _get_rsf_services():
             host = None
         logger.debug("RSF service %s is running on %s" % (svc, host))
         services[svc] = host
+
+    if not services:
+        logger.error("No RSF services defined")
+        logger.error(output)
+        raise RuntimeError("No RSF services defined")
 
     return services
 
@@ -346,6 +387,9 @@ def _get_rsf_isrunning():
     except Retcode:
         logger.debug("RSF service is disabled")
         isrunning = False
+    except:
+        logger.error("Failed to determine RSF status", exc_info=1)
+        raise RuntimeError("Failed to determine RSF status")
     else:
         logger.debug("RSF service is enabled")
         isrunning = True
@@ -367,13 +411,17 @@ def _get_rsf_partner():
     try:
         output = execute("%s nodes" % _rsfcli)
     except:
-        raise
+        logger.error("Failed to determine appliance RSF partner", exc_info=1)
+        raise RuntimeError("Failed to determine appliance RSF partner")
 
     # This node contains '*' at the end of the line
     for l in output.splitlines():
         if "*" not in l:
             partner = l.strip()
             break
+
+    if partner is None:
+        raise RuntimeError("Failed to determine appliance RSF partner")
 
     logger.debug("RSF partner is %s" % partner)
 

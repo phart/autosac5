@@ -41,7 +41,7 @@ def check_ping(ip):
     try:
         output = execute(cmd)
     except Retcode:
-        logger.debug("%s is not alive" % ip)
+        logger.error("%s is not alive" % ip)
         check["status"] = False
     else:
         logger.debug("%s is alive" % ip)
@@ -103,14 +103,7 @@ def check_nmv_access():
         "status": None,
         "output": None
     }
-
-    try:
-        port, https = get_nmv_conf()
-    except RuntimeError, e:
-        logger.debug("Failed to read NMV configuration")
-        check["status"] = False
-        check["output"] = str(e)
-        return check
+    port, https = get_nmv_conf()
 
     if https:
         url = "https://localhost:%s/" % port
@@ -123,14 +116,15 @@ def check_nmv_access():
     try:
         rc = urllib.urlopen(url)
     except IOError, e:
-        logger.debug("Failed to reach NMV")
+        logger.error("Failed to reach NMV")
+        logger.debug(str(e))
         check["status"] = False
         check["output"] = str(e)
     else:
         if rc.code != 200:
             check["status"] = False
             check["output"] = "Failed with HTTP status %d" % rc.code
-            logger.debug(" HTTP status %s" % rc.code)
+            logger.error(" HTTP status %s" % rc.code)
         else:
             logger.debug("Succeeded")
             check["status"] = True
@@ -177,11 +171,12 @@ def check_cmd(cmd):
     try:
         output = execute(cmd)
     except Retcode, r:
-        logger.debug("Failed with non-zero return code")
+        logger.error("Failed with return code %s" % r.retcode)
+        logger.debug(r.output)
         check["status"] = False
         check["output"] = r.output
     except Timeout, t:
-        logger.debug("Failed timed out")
+        logger.error("Timed out after %ss" % t.timeout)
         check["status"] = False
         check["output"] = str(t)
     else:
@@ -211,11 +206,12 @@ def check_nmc_cmd(cmd):
     try:
         output = execute_nmc(cmd)
     except Retcode, r:
-        logger.debug("Failed with non-zero return code")
+        logger.error("Failed with return code %s" % r.retcode)
+        logger.debug(r.output)
         check["status"] = False
         check["output"] = r.output
     except Timeout, t:
-        logger.debug("Failed timed out")
+        logger.error("Timed out after %ss" % t.timeout)
         check["rc"] = False
         check["output"] = str(t)
     else:
@@ -245,7 +241,7 @@ def check_dns_lookup(name):
     try:
         socket.gethostbyname(name)
     except socker.gaierror, e:
-        logger.debug("Failed to resolve")
+        logger.error("Failed to resolve %s" % name)
         check["status"] = False
         check["output"] = str(e)
     else:
