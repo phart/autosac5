@@ -43,6 +43,7 @@ def usage():
     print "%s [-h] [-c CONFIG]" % cmd
     print ""
     print "Nexenta AutoSAC (Support Acceptance Check) utility."
+    print "Version %s" % version
     print ""
     print "Arguments:"
     print ""
