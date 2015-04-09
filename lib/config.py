@@ -439,6 +439,7 @@ def _get_rsf_partner():
         partner (str): Partner hostname
     """
     partner = None
+    hostname = get_hostname()
 
     try:
         output = execute("%s nodes" % _rsfcli)
@@ -446,10 +447,13 @@ def _get_rsf_partner():
         logger.error("Failed to determine appliance RSF partner", exc_info=1)
         raise RuntimeError("Failed to determine appliance RSF partner")
 
-    # This node contains '*' at the end of the line
+    # Parse the output for the partner hostname
     for l in output.splitlines():
-        if "*" not in l:
-            partner = l.strip()
+        # Some versions of this command contain the '*' character at the end
+        # of line so we split on spaces
+        host = l.split()[0]
+        if host != hostname:
+            partner = host
             break
 
     if partner is None:
