@@ -277,7 +277,7 @@ def check_rsf_failover():
             logger.debug("Fail over for %s skipped" % service)
             continue
 
-        logger.info("Failover %s to %s" % (service, hostname))
+        logger.info("Failover %s to %s" % (service, partner))
 
         cmd = "setup group rsf-cluster %s shared-volume %s failover %s" \
               % (name, service, partner)
