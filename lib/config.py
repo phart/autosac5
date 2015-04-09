@@ -147,20 +147,22 @@ def get_domain_conf():
     """
     domain = {}
 
+    if not _get_domain_ismember():
+        raise RuntimeError("The appliance is in WORKGROUP mode")
+
     cmd = "nltest /dsgetdcname"
     try:
         output = execute(cmd)
     except:
-        logger.error("Failed to determine appliance domain configuration",
-                     exc_info=1)
-        raise RuntimeError("Failed to determine appliance domain " \
-                           "configuration")
+        # First line of nltest is all that is important when it errors
+        logger.error(output.splitlines()[0], exc_info=1)
+        raise RuntimeError(output.splitlines()[0])
 
     # Parse all but the first line which contains header text
     for line in output.splitlines()[1:]:
         k, v = [x.strip() for x in line.split(":")]
         k = k.lower().replace(" ", "_")
-        logger.debug("Domain %s: %s" % (k, v))
+        logger.debug("%s: %s" % (k, v))
         domain[k] = v
 
     # Log and raise an exception if the dict is empty
@@ -172,6 +174,34 @@ def get_domain_conf():
 
     return domain
 
+
+def _get_domain_ismember():
+    """
+    Determine whether the appliance is a domain member.
+
+    Inputs:
+        None
+    Outputs:
+        member (bool): Is a domain member
+    """
+    cmd = "svccfg -s network/smb/server listprop smbd/domain_member"
+    try:
+        output = execute(cmd)
+    except:
+        logger.error("Failed to determine domain membership status",
+                     exc_info=1)
+        raise RuntimeError("Failed to determine domain status")
+
+    if "true" in output:
+        member = True
+    elif "false" in output:
+        member = False
+    else:
+        logger.error("Failed to read domain status")
+        logger.error(output)
+        raise RuntimeError("Failed to read domain membership status")
+
+    return member
 
 def get_domain_conf_3():
     """
