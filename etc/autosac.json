@@ -42,11 +42,18 @@
         "kwargs": {}
     },
     {
-        "name": "check_rsf_failover",
+        "name": "check_rsf_failover_to",
         "enabled": true,
         "f": "check_rsf_failover",
         "args": [],
-        "kwargs": {}
+        "kwargs": {"local": true}
+    },
+    {
+        "name": "check_rsf_failover_from",
+        "enabled": true,
+        "f": "check_rsf_failover",
+        "args": [],
+        "kwargs": {"local": false}
     },
     {
         "name": "check_domain_ping",

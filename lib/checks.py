@@ -255,32 +255,33 @@ def check_dns_lookup(name):
     return check
 
 
-def check_rsf_failover():
+def check_rsf_failover(local=True):
     """
     Check RSF service failover.
 
-    NOTE the check will only failover services that are active on the host the
-    check is running on.
-
     Inputs:
-        None
+        local (bool): Failover services local (True) or remote (False)
     Outputs:
         check (dict): Check results
     """
     check = {}
     hostname = get_hostname()
     name, partner, services = get_rsf_conf()
+    if local:
+        destination = hostname
+    else:
+        destination = partner
 
-    # Failover any services running on this node
+    # Failover any services not already at the destination host
     for service, host in services.iteritems():
-        if host != hostname:
+        if host == destination:
             logger.debug("Fail over for %s skipped" % service)
             continue
 
-        logger.info("Failover %s to %s" % (service, partner))
+        logger.info("Failover %s to %s" % (service, destination))
 
         cmd = "setup group rsf-cluster %s shared-volume %s failover %s" \
-              % (name, service, partner)
+              % (name, service, destination)
         check[service] = check_nmc_cmd(cmd)
 
     return check
