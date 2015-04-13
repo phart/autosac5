@@ -299,3 +299,22 @@ def check_rsf_failover(local=True):
         check[service] = check_nmc_cmd(cmd)
 
     return check
+
+
+def check_zpool_status():
+    """
+    Check zpool status and confirm all pools are ONLINE.
+
+    Inputs:
+        None:
+    Outputs:
+        check (dict): Check restults
+    """
+    cmd = "zpool status -xv"
+    check = check_cmd(cmd)
+
+    if "all pools are healthy" not in check["output"]:
+        logger.error("Failed zpool status")
+        check["status"] = False
+
+    return check

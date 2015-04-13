@@ -1,5 +1,12 @@
 [
     {
+        "name": "check_rsf_failover_to",
+        "enabled": true,
+        "f": "check_rsf_failover",
+        "args": [],
+        "kwargs": {"local": true}
+    },
+    {
         "name": "check_gateway_ping",
         "enabled": true,
         "f": "check_gateway_ping",
@@ -42,18 +49,11 @@
         "kwargs": {}
     },
     {
-        "name": "check_rsf_failover_to",
+        "name": "check_zpool_status",
         "enabled": true,
-        "f": "check_rsf_failover",
+        "f": "check_zpool_status",
         "args": [],
-        "kwargs": {"local": true}
-    },
-    {
-        "name": "check_rsf_failover_from",
-        "enabled": true,
-        "f": "check_rsf_failover",
-        "args": [],
-        "kwargs": {"local": false}
+        "kwargs": {}
     },
     {
         "name": "check_domain_ping",
@@ -61,5 +61,12 @@
         "f": "check_domain_ping",
         "args": [],
         "kwargs": {}
+    },
+    {
+        "name": "check_rsf_failover_from",
+        "enabled": true,
+        "f": "check_rsf_failover",
+        "args": [],
+        "kwargs": {"local": false}
     }
 ]
