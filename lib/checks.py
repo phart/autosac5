@@ -43,6 +43,10 @@ def check_ping(ip):
     except Retcode:
         logger.error("%s is not alive" % ip)
         check["status"] = False
+    except Exception, e:
+        logger.error("Unhandled exception")
+        logger.debug("Stack trace", exc_info=True)
+        check["status"] = False
     else:
         logger.debug("%s is alive" % ip)
         check["status"] = True
@@ -183,6 +187,11 @@ def check_cmd(cmd):
         logger.error("Timed out after %ss" % t.timeout)
         check["status"] = False
         check["output"] = str(t)
+    except Exception, e:
+        logger.error("Unhandled exception")
+        logger.debug("Stack trace", exc_info=True)
+        check["rc"] = False
+        check["output"] = str(e)
     else:
         logger.debug("Succeeded")
         check["status"] = True
@@ -218,6 +227,11 @@ def check_nmc_cmd(cmd):
         logger.error("Timed out after %ss" % t.timeout)
         check["rc"] = False
         check["output"] = str(t)
+    except Exception, e:
+        logger.error("Unhandled exception")
+        logger.debug("Stack trace", exc_info=True)
+        check["rc"] = False
+        check["output"] = str(e)
     else:
         logger.debug("Succeeded")
         check["status"] = True
