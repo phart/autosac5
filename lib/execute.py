@@ -88,6 +88,7 @@ def execute(cmd, timeout=None):
         phandle.kill()
         raise Timeout(cmd=cmd, timeout=timeout)
     except:
+        logger.debug("Unhandled exception", exc_info=True)
         raise
     else:
         # Possible race condition where alarm isn't disabled in time
