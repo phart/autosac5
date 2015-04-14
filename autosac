@@ -164,7 +164,7 @@ def main():
         name = c["name"]
         # If the check is disabled log it and continue
         if not c["enabled"]:
-            logger.info("Check %s is disabled" % name.upper())
+            logger.warn("Check %s is disabled" % name.upper())
             continue
 
         # If the log is enabled execute the check as defined in the config
