@@ -212,6 +212,7 @@ def _get_domain_ismember():
 
     return member
 
+
 def get_domain_conf_3():
     """
     Legacy function for version 3.x. Returns domain configuration.
@@ -229,7 +230,7 @@ def get_domain_conf_3():
     except Exception, e:
         logger.error("Failed to determine appliance domain configuration")
         logger.debug(str(e), exc_info=1)
-        raise RuntimeError("Failed to determine appliance domain " \
+        raise RuntimeError("Failed to determine appliance domain "
                            "configuration")
 
     # Parse out domain name, DC hostname and IP
@@ -247,6 +248,7 @@ def get_domain_conf_3():
         raise RuntimeError("No domain configuration defined")
 
     return domain
+
 
 def get_nmv_conf():
     """

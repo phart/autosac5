@@ -39,7 +39,7 @@ def dd(ifile, ofile, bs, duration):
         # Execute the command and wait for the subprocess to terminate
         # STDERR is redirected to STDOUT
         ph = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT)
+                              stderr=subprocess.STDOUT)
     except:
         raise
 
