@@ -34,8 +34,9 @@ def get_major_vers():
     cmd = "uname -a"
     try:
         output = execute(cmd)
-    except:
-        logger.error("Failed to determine appliance version", exc_info=1)
+    except Exception, e:
+        logger.error("Failed to determine appliance version")
+        logger.debug(str(e), exc_info=True)
         raise RuntimeError("Failed to determine appliance version")
 
     vers = output.split("NexentaOS_")[1]
@@ -60,8 +61,9 @@ def get_hostname():
     """
     try:
         hostname = socket.gethostname()
-    except:
-        logger.error("Failed to determine appliance hostname", exc_info=1)
+    except Exception, e:
+        logger.error("Failed to determine appliance hostname")
+        logger.debug(str(e), exc_info=True)
         raise RuntimeError("Failed to determine appliance hostname")
 
     logger.debug("System hostname is %s" % hostname)
@@ -86,8 +88,9 @@ def get_gateway_conf():
     cmd = "route -n get default"
     try:
         output = execute(cmd)
-    except:
-        logger.error("Failed to determine network gateway", exc_info=1)
+    except Exception, e:
+        logger.error("Failed to determine network gateway")
+        logger.debug(str(e), exc_info=True)
         raise RuntimeError("Failed to determine network gateway")
 
     for l in output.splitlines():
@@ -97,7 +100,7 @@ def get_gateway_conf():
 
     if gateway is None:
         logger.error("No network gateway defined")
-        logger.error(output)
+        logger.debug(output)
         raise RuntimeError("No network gateway defined")
 
     logger.debug("The network gateway is %s" % gateway)
@@ -119,8 +122,9 @@ def get_dns_conf():
 
     try:
         fh = open(f, "r")
-    except:
-        logger.error("Unable to open resolv.conf", exc_info=1)
+    except Exception, e:
+        logger.error("Unable to open resolv.conf")
+        logger.debug(str(e), exc_info=True)
         raise RuntimeError("Failed to determine appliance nameservers")
     for line in fh:
         if line.startswith("nameserver"):
@@ -130,7 +134,7 @@ def get_dns_conf():
 
     if len(dns) == 0:
         logger.error("No network nameservers defined")
-        logger.error(fh.read())
+        logger.debug(fh.read())
         raise RuntimeError("No network nameservers defined")
 
     return dns
@@ -153,10 +157,15 @@ def get_domain_conf():
     cmd = "nltest /dsgetdcname"
     try:
         output = execute(cmd)
-    except:
+    except Retcode, r:
         # First line of nltest is all that is important when it errors
-        logger.error(output.splitlines()[0], exc_info=1)
-        raise RuntimeError(output.splitlines()[0])
+        logger.error(r.output.splitlines()[0])
+        logger.debug(str(r), exc_info=True)
+        raise RuntimeError(r.output.splitlines()[0])
+    except Exception, e:
+        logger.error("Encountered an unhandled exception")
+        logger.debug(str(e), exc_info=True)
+        raise RuntimeError("Encountered an unhandled exception")
 
     # Parse all but the first line which contains header text
     for line in output.splitlines()[1:]:
@@ -169,7 +178,7 @@ def get_domain_conf():
     # In theory if we make it this far domain should not be empty
     if not domain:
         logger.error("No domain configuration defined")
-        logger.error(output)
+        logger.debug(output)
         raise RuntimeError("No domain configuration defined")
 
     return domain
@@ -187,18 +196,18 @@ def _get_domain_ismember():
     cmd = "svccfg -s network/smb/server listprop smbd/domain_member"
     try:
         output = execute(cmd)
-    except:
-        logger.error("Failed to determine domain membership status",
-                     exc_info=1)
-        raise RuntimeError("Failed to determine domain status")
+    except Exception, e:
+        logger.error("Failed to determine domain membership status")
+        logger.debug(str(e), exc_info=1)
+        raise RuntimeError("Failed to determine domain membership status")
 
     if "true" in output:
         member = True
     elif "false" in output:
         member = False
     else:
-        logger.error("Failed to read domain status")
-        logger.error(output)
+        logger.error("Failed to read domain membership status")
+        logger.debug(output)
         raise RuntimeError("Failed to read domain membership status")
 
     return member
@@ -217,9 +226,9 @@ def get_domain_conf_3():
     cmd = "smbadm list"
     try:
         output = execute(cmd)
-    except:
-        logger.error("Failed to determine appliance domain configuration",
-                     exc_info=1)
+    except Exception, e:
+        logger.error("Failed to determine appliance domain configuration")
+        logger.debug(str(e), exc_info=1)
         raise RuntimeError("Failed to determine appliance domain " \
                            "configuration")
 
@@ -234,7 +243,7 @@ def get_domain_conf_3():
     # In theory if we make it this far domain should not be empty
     if not domain:
         logger.error("No domain configuration defined")
-        logger.error(output)
+        logger.debug(output)
         raise RuntimeError("No domain configuration defined")
 
     return domain
@@ -315,10 +324,10 @@ def _get_nmv_port(f):
 
     try:
         fh = open(f, "r")
-    except:
-        logger.error("Failed to open the Apache configuration file",
-                     exc_info=1)
-        raise RuntimeError("Failed to determine appliance NMV port")
+    except Exception, e:
+        logger.error("Failed to open the Apache configuration file")
+        logger.debug(str(e), exc_info=1)
+        raise RuntimeError("Failed to open the Apache configuration file")
     for line in fh:
         if line.startswith("NameVirtualHost"):
             port = line.split(":")[1].strip()
@@ -328,7 +337,7 @@ def _get_nmv_port(f):
     # If port is missing at this point the config is corrupt
     if port is None:
         logger.error("Apache configuration is corrupt")
-        logger.error(fh.read())
+        logger.debug(fh.read())
         raise RuntimeError("Apache configuration is corrupt")
 
     return port
@@ -382,8 +391,9 @@ def _get_rsf_name():
 
     try:
         output = execute("%s status" % _rsfcli)
-    except:
-        logger.error("Failed to determine RSF cluster name", exc_info=1)
+    except Exception, e:
+        logger.error("Failed to determine RSF cluster name")
+        logger.debug(str(e), exc_info=True)
         raise RuntimeError("Failed to determine RSF cluster name")
 
     # Parse the line that start with 'Contacted' for the cluster name
@@ -393,7 +403,7 @@ def _get_rsf_name():
 
     if name is None:
         logger.error("No RSF cluster name defined")
-        logger.error(output)
+        logger.debug(output)
         raise RuntimeError("No RSF cluster name defined")
 
     logger.debug("RSF cluster name is %s" % name)
@@ -414,8 +424,9 @@ def _get_rsf_services():
 
     try:
         output = execute("%s list" % _rsfcli)
-    except:
-        logger.error("Failed to determine RSF services", exc_info=1)
+    except Exception, e:
+        logger.error("Failed to determine RSF services")
+        logger.debug(str(e), exc_info=True)
         raise RunTimeError("Failed to determine RSF services")
 
     # Parse each line of otput and split on ':'
@@ -429,7 +440,7 @@ def _get_rsf_services():
 
     if not services:
         logger.error("No RSF services defined")
-        logger.error(output)
+        logger.debug(output)
         raise RuntimeError("No RSF services defined")
 
     return services
@@ -446,11 +457,12 @@ def _get_rsf_isrunning():
     """
     try:
         output = execute("%s isrunning" % _rsfcli)
-    except Retcode:
+    except Retcode, r:
         logger.debug("RSF service is disabled")
         isrunning = False
-    except:
-        logger.error("Failed to determine RSF status", exc_info=1)
+    except Exception, e:
+        logger.error("Failed to determine RSF status")
+        logger.debug(str(e), exc_info=True)
         raise RuntimeError("Failed to determine RSF status")
     else:
         logger.debug("RSF service is enabled")
@@ -473,8 +485,9 @@ def _get_rsf_partner():
 
     try:
         output = execute("%s nodes" % _rsfcli)
-    except:
-        logger.error("Failed to determine appliance RSF partner", exc_info=1)
+    except Exception, e:
+        logger.error("Failed to determine appliance RSF partner")
+        logger.debug(str(e), exc_info=True)
         raise RuntimeError("Failed to determine appliance RSF partner")
 
     # Parse the output for the partner hostname
@@ -487,6 +500,8 @@ def _get_rsf_partner():
             break
 
     if partner is None:
+        logger.error("Failed to determine appliance RSF partner")
+        logger.debug(output)
         raise RuntimeError("Failed to determine appliance RSF partner")
 
     logger.debug("RSF partner is %s" % partner)
