@@ -12,6 +12,9 @@ William Kettler <william.kettler@nexenta.com>
 import socket
 import urllib2
 import logging
+from threading import Thread
+from diskqual import r_seq
+from Queue import Queue, Empty
 from execute import execute, execute_nmc, Retcode, Timeout
 from config import *
 
@@ -303,5 +306,78 @@ def check_zpool_status():
     if "all pools are healthy" not in check["output"]:
         logger.error("Failed zpool status")
         check["status"] = False
+
+    return check
+
+
+def check_disk_perf(bs=32, duration=5, workers=8):
+    """
+    Verifies disk performance.
+
+    Inputs:
+        bs       (int): Blocksize in KB
+        duration (int): Duration in seconds
+        workers  (int): Number of threads
+    Outputs:
+        check (disk): Check results
+    """
+    disks = get_disk_conf()
+    results = Queue()
+    check = {}
+
+    def worker():
+        # Iterate over queue
+        while True:
+            try:
+                disk = diskq.get_nowait()
+                logger.info("Verifying %s performance" % disk)
+            except Empty:
+                break
+
+            # Do something with disk
+            try:
+                tput = r_seq(disk, bs, duration)
+            except Retcode, r:
+                logger.error(str(r))
+                logger.debug(r.output)
+                status = False
+                tput = None
+            except Exception, e:
+                logger.error("Failed %s with unhandled exception" % disk)
+                logger.error(str(e))
+                logger.debug(str(e), exc_info=True)
+                status = False
+                tput = None
+            else:
+                logger.debug("%s performance is %s MB/s" % (disk, tput))
+                status = True
+            finally:
+                results.put((disk, status, tput))
+
+    # Build queue
+    diskq = Queue()
+    map(diskq.put, disks)
+
+    # Start threads
+    thrs = []
+    for i in range(workers):
+        t = Thread(target=worker)
+        t.start()
+        thrs.append(t)
+
+    # Join threads
+    for t in thrs:
+        t.join()
+
+    # Build check dict from results
+    while True:
+        try:
+            disk, status, tput = results.get_nowait()
+        except Empty:
+            break
+        check[disk] = {
+            "status": status,
+            "tput": tput
+        }
 
     return check

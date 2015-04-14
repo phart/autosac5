@@ -63,6 +63,13 @@
         "kwargs": {}
     },
     {
+        "name": "check_disk_perf",
+        "enabled": true,
+        "f": "check_disk_perf",
+        "args": [],
+        "kwargs": {}
+    },
+    {
         "name": "check_rsf_failover_from",
         "enabled": true,
         "f": "check_rsf_failover",
