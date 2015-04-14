@@ -40,12 +40,8 @@ def check_ping(ip):
     cmd = "ping -s %s 56 5" % ip
     try:
         output = execute(cmd)
-    except Retcode:
+    except Retcode, r:
         logger.error("%s is not alive" % ip)
-        check["status"] = False
-    except Exception, e:
-        logger.error("Unhandled exception")
-        logger.debug("Stack trace", exc_info=True)
         check["status"] = False
     else:
         logger.debug("%s is alive" % ip)
@@ -187,11 +183,6 @@ def check_cmd(cmd):
         logger.error("Timed out after %ss" % t.timeout)
         check["status"] = False
         check["output"] = str(t)
-    except Exception, e:
-        logger.error("Unhandled exception")
-        logger.debug("Stack trace", exc_info=True)
-        check["rc"] = False
-        check["output"] = str(e)
     else:
         logger.debug("Succeeded")
         check["status"] = True
@@ -227,11 +218,6 @@ def check_nmc_cmd(cmd):
         logger.error("Timed out after %ss" % t.timeout)
         check["rc"] = False
         check["output"] = str(t)
-    except Exception, e:
-        logger.error("Unhandled exception")
-        logger.debug("Stack trace", exc_info=True)
-        check["rc"] = False
-        check["output"] = str(e)
     else:
         logger.debug("Succeeded")
         check["status"] = True
@@ -260,6 +246,7 @@ def check_dns_lookup(name):
         socket.gethostbyname(name)
     except socker.gaierror, e:
         logger.error("Failed to resolve %s" % name)
+        logger.debug(str(e), exc_info=True)
         check["status"] = False
         check["output"] = str(e)
     else:
