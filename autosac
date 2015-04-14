@@ -172,9 +172,14 @@ def main():
         try:
             f = globals()[c["f"]]
             data["results"][name] = f(*c["args"], **c["kwargs"])
+        except RuntimeError, r:
+            logger.error(str(r))
+            data["results"][name] = None
         except Exception, e:
+            logger.error("Encountered an unhandled exception")
             logger.error(str(e))
-            logger.debug("Exception stack", exc_info=True)
+            logger.debug(str(e), exc_info=True)
+            data["results"][name] = None
     logger.info("Checks completed")
 
     # Write the data to the output file
