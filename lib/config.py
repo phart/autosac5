@@ -492,3 +492,56 @@ def _get_rsf_partner():
     logger.debug("RSF partner is %s" % partner)
 
     return partner
+
+
+def get_disk_conf():
+    """
+    Return parsed hddisco.
+
+    Inputs:
+        None
+    Outputs:
+        disks (dict): Parsed hddisco output
+    """
+    disks = {}
+
+    cmd = "hddisco"
+    try:
+        output = execute(cmd, timeout=300)
+    except Exception, e:
+        logger.error("Failed to determine disk configuration")
+        logger.debug(str(e), exc_info=True)
+        raise RuntimeError("Failed to determine disk configuration")
+
+    # Parse output
+    path = 0
+    for line in output.splitlines():
+        if line.startswith("="):
+            devid = line.lstrip("=").strip()
+            disks[devid] = {}
+            disks[devid]["P"] = {}
+        elif line.startswith("P"):
+            try:
+                k, v = [x.strip() for x in line.split()[1:]]
+            except:
+                if line.startswith("P end"):
+                    path += 1
+            else:
+                # sd driver doesn't print P start/end
+                if path not in disks[devid]["P"]:
+                    disks[devid]["P"][path] = {}
+                disks[devid]["P"][path][k] = v
+        else:
+            try:
+                k, v = [x.strip() for x in line.split(" ", 1)]
+            except:
+                continue
+            else:
+                disks[devid][k] = v
+
+    if not disks:
+        logger.error("No disks discovered")
+        logger.debug(output)
+        raise RuntimeError("No disks discovered")
+
+    return disks
