@@ -1,0 +1,72 @@
+[
+    {
+        "name": "check_rsf_failover_to",
+        "enabled": true,
+        "f": "check_rsf_failover",
+        "args": [],
+        "kwargs": {"local": true}
+    },
+    {
+        "name": "check_gateway_ping",
+        "enabled": true,
+        "f": "check_gateway_ping",
+        "args": [],
+        "kwargs": {}
+    },
+    {
+        "name": "check_dns_ping",
+        "enabled": true,
+        "f": "check_dns_ping",
+        "args": [],
+        "kwargs": {}
+    },
+    {
+        "name": "check_nmv_access",
+        "enabled": true,
+        "f": "check_nmv_access",
+        "args": [],
+        "kwargs": {}
+    },
+    {
+        "name": "check_repo_access",
+        "enabled": true,
+        "f": "check_cmd",
+        "args": ["apt-get update"],
+        "kwargs": {}
+    },
+    {
+        "name": "check_mailer",
+        "enabled": true,
+        "f": "check_nmc_cmd",
+        "args": ["setup appliance mailer verify"],
+        "kwargs": {}
+    },
+    {
+        "name": "check_dns_lookup",
+        "enabled": true,
+        "f": "check_dns_lookup",
+        "args": ["www.nexenta.com"],
+        "kwargs": {}
+    },
+    {
+        "name": "check_zpool_status",
+        "enabled": true,
+        "f": "check_zpool_status",
+        "args": [],
+        "kwargs": {}
+    },
+    {
+        "name": "check_domain_ping",
+        "enabled": true,
+        "f": "check_domain_ping",
+        "args": [],
+        "kwargs": {}
+    },
+    {
+        "name": "check_rsf_failover_from",
+        "enabled": true,
+        "f": "check_rsf_failover",
+        "args": [],
+        "kwargs": {"local": false}
+    }
+]
