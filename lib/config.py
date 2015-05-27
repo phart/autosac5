@@ -433,7 +433,10 @@ def _get_rsf_services():
 
     # Parse each line of otput and split on ':'
     for l in output.splitlines():
-        svc, host = [x.strip() for x in output.split(":")]
+        # Skip empty lines
+        if not l.strip():
+            continue
+        svc, host = [x.strip() for x in l.split(":")]
         # Check if service is stopped
         if host == "-":
             host = None
