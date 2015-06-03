@@ -174,12 +174,14 @@ def main():
             data["results"][name] = f(*c["args"], **c["kwargs"])
         except RuntimeError, r:
             logger.error(str(r))
-            data["results"][name] = None
+            data["results"][name] = {"exception": str(r)}
         except Exception, e:
             logger.error("Encountered an unhandled exception")
             logger.error(str(e))
             logger.debug(str(e), exc_info=True)
-            data["results"][name] = None
+            data["results"][name] = {"exception": str(e)}
+        else:
+            data["results"][name]["exception"] = None
     logger.info("Checks completed")
 
     # Write the data to the output file
