@@ -1,0 +1,312 @@
+#!/usr/bin/env python
+
+"""
+sac2txt
+
+Convert autosac JSON output to a human readable text document.
+
+Copyright (c) 2015  Nexenta Systems
+William Kettler <william.kettler@nexenta.com>
+"""
+
+import simplejson
+import sys
+import os
+import logging
+import getopt
+import sys
+
+
+# Configure logging
+logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.INFO)
+
+
+def usage():
+    """
+    Print usage.
+
+    Inputs:
+        None
+    Outputs:
+        None
+    """
+    cmd = sys.argv[0]
+
+    print "%s -j JSON [-h] [-o OUTPUT]" % cmd
+    print ""
+    print "Convert autosac JSON output to a human readable text document."
+    print ""
+    print "Arguments:"
+    print ""
+    print "    -h, --help           Print usage"
+    print "    -j, --json           Path to JSON"
+    print "    -o, --output         Output file"
+
+
+class Document:
+
+    def __init__(self, f):
+        try:
+            self.fh = open(f, 'w')
+        except:
+            logging.error("Failed to open document %s" % f)
+            raise
+
+    def _write(self, s):
+        """
+        Wrapper function for the write method.
+
+        Inputs:
+            s (str): String
+        Output:
+            None
+        """
+        self.fh.write(s)
+        self.fh.flush()
+
+    def print_title(self, s):
+        """
+        Format and print title.
+        e.g.
+        =====
+        TITLE
+        =====
+
+        Inputs:
+            s (str): Title
+        Outputs:
+            None
+        """
+        title = s.upper()
+
+        self.print_newline()
+        self._write('%s\n' % ('=' * len(title)))
+        self._write('%s\n' % title)
+        self._write('%s\n' % ('=' * len(title)))
+        self.print_newline()
+
+    def print_section(self, s):
+        """
+        Format and print section title.
+        e.g.
+        Section
+        -------
+
+        Inputs:
+            s (str): Section title
+        Outputs:
+            None
+        """
+        section = s.upper()
+
+        self.print_newline()
+        self.print_newline()
+        self._write('%s\n' % section)
+        self._write('%s\n' % ('-' * len(section)))
+        self.print_newline()
+
+    def print_sub_section(self, s, level=0):
+        """
+        Format and print sub-section title.
+        e.g.
+        [-]+ Sub-section
+
+        Inputs:
+            s (str): Sub-section title
+            level (int): Sub-section level`
+        Outputs:
+            None
+        """
+        section = s.capitalize()
+
+        self.print_newline()
+        self._write('%s+ %s\n' % ('-' * level, section))
+        self.print_newline()
+
+    def print_string(self, s):
+        """
+        Format and print string.
+
+        Inputs:
+            s (str): String
+        Outputs:
+            None
+        """
+        self._write('%s\n' % s)
+
+    def print_paragraph(self, p):
+        """
+        Format and print a paragraph.
+
+        Inputs:
+            p (str): Paragraph
+        Outputs:
+            None
+        """
+        self._write('%s\n\n' % p)
+
+    def print_pairs(self, d, level=0):
+        """
+        Format and print key/value pairs.
+        e.g.
+        key1 : value1
+        key2 : value2
+
+        Inputs:
+            d (dict): Dictionary of k/v pairs
+        Outputs:
+            None
+        """
+        for k, v in d.iteritems():
+            if type(v) is dict:
+                self._write('%s%s :\n' % ("\t" * level, k.upper()))
+                self.print_pairs(v, level + 1)
+            elif k == "output":
+                self._write('%s%s :\n' % ("\t" * level, k.upper()))
+                self._write('%s\n' % v)
+            else:
+                self._write('%s%s : %s\n' % ("\t" * level, k.upper(), v))
+
+    def print_num_list(self, l):
+        """
+        Print a numbered list.
+        e.g.
+         1. item1
+         2. item2
+         3. item3
+
+        Inputs:
+            l (list): List to print
+        Outputs:
+            None
+        """
+        self.print_newline()
+        for num, item in enumerate(l):
+            self._write(" %i. %s\n" % (num + 1, item))
+            num += 1
+        self.print_newline()
+
+    def print_bul_list(self, l):
+        """
+        Print a bulleted list.
+        e.g.
+         - itme1
+         - item2
+         - item3
+
+        Inputs:
+            l (list): List to print
+        Outputs:
+            None
+        """
+        self.print_newline()
+        for i in l:
+            self._write(" - %s\n" % i)
+        self.print_newline()
+
+    def print_newline(self):
+        """
+        Print newline.
+
+        Inputs:
+            None
+        Outputs:
+            None
+        """
+        self._write('\n')
+
+    def __exit__(self):
+        # Close file
+        if fh is not sys.stdout:
+            self.fh.close()
+
+
+def main():
+    # Parse command line arguments
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], ":hj:o:",
+                                   ["help", "json=", "output="])
+    except getopt.GetoptError as err:
+        logging.error(str(err))
+        usage()
+        sys.exit(1)
+
+    # Initialize required arguments
+    json = None
+    output = None
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-j", "--json"):
+            json = a
+        elif o in ("-o", "--output"):
+            output = a
+
+    if json is None:
+        logging.error("Missing JSON path")
+        usage()
+        sys.exit(1)
+
+    # Open and parse the json
+    try:
+        fh = open(json)
+    except Exception, e:
+        logging.error("Failed to open the JSON file")
+        logging.error(str(e))
+        sys.exit(1)
+    try:
+        j = simplejson.load(fh, encoding=None, cls=None)
+    except Exception, e:
+        logging.error("Failed to parse the config file")
+        logging.error(str(e))
+        sys.exit(1)
+    finally:
+        fh.close()
+
+    # If there is no output defined default to the same path at the json file
+    # and use the same file name + .txt.
+    if output is None:
+        d = os.path.dirname(json)
+        f = os.path.basename(json)
+        output = os.path.join(d, f.replace("json", "txt"))
+
+    # Open the output file.
+    doc = Document(output)
+
+    # Print version
+    doc.print_string("v%s" % j["autosac_version"])
+
+    # Print title
+    doc.print_title("Nexenta AutoSAC")
+
+    # Print results
+    for title, result in j["results"].iteritems():
+        # Print the section title
+        doc.print_section(title)
+
+        # Older SAC output may have empty results objects
+        if result is None:
+            continue
+
+        # Print the exception first
+        # Older SAC output won't have the exception key
+        if "exception" in result:
+            exception = result.pop("exception")
+            doc.print_pairs({"exception": exception})
+            if exception:
+                doc.print_pairs({"exception_str": result.pop("exception_str")})
+
+        # Print all k/v pairs
+        for k, v in result.iteritems():
+            if type(v) is dict:
+                doc.print_sub_section(k)
+                doc.print_pairs(v)
+            else:
+                doc.print_pairs({k: v})
+
+    logging.info("Output written to %s" % output)
+
+if __name__ == "__main__":
+    main()

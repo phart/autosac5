@@ -20,7 +20,7 @@ from lib.execute import execute, Retcode
 from lib.prompt import prompt_yn
 from lib.checks import *
 
-version = "1.0.2"
+version = "1.1.0"
 output_d = "/var/tmp/go-live"
 output_f = "nexenta-autosac-%s.json" \
                % time.strftime('%Y%m%d.%H%M%S', time.localtime(time.time()))
@@ -174,12 +174,20 @@ def main():
             data["results"][name] = f(*c["args"], **c["kwargs"])
         except RuntimeError, r:
             logger.error(str(r))
-            data["results"][name] = None
+            data["results"][name] = {
+                "exception": True,
+                "exception_str": str(r)
+            }
         except Exception, e:
             logger.error("Encountered an unhandled exception")
             logger.error(str(e))
             logger.debug(str(e), exc_info=True)
-            data["results"][name] = None
+            data["results"][name] = {
+                "exception": True,
+                "exception_str": str(e)
+            }
+        else:
+            data["results"][name]["exception"] = False
     logger.info("Checks completed")
 
     # Write the data to the output file
