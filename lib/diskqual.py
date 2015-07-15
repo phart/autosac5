@@ -8,6 +8,7 @@ William Kettler <william.kettler@nexenta.com>
 """
 
 import sys
+import os
 import time
 import subprocess
 import logging
@@ -31,7 +32,14 @@ def dd(ifile, ofile, bs, duration):
     Outputs:
         tput (int): Throughput in MB/s
     """
-    cmd = "/usr/gnu/bin/dd if=%s of=%s bs=%sK" % (ifile, ofile, bs)
+    dd = "/usr/gnu/bin/dd"
+
+    # Check that the dd command exists
+    # On 3.x the command is in a seperate location
+    if not os.path.isfile(dd):
+        raise RuntimeError("%s does not exist" % dd)
+
+    cmd = "%s if=%s of=%s bs=%sK" % (dd, ifile, ofile, bs)
 
     logger.debug("Executing \"%s\"" % cmd)
 
