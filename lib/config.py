@@ -486,10 +486,11 @@ def _get_rsf_partner():
         partner (str): Partner hostname
     """
     partner = None
+    hosts = []
     hostname = get_hostname()
 
     try:
-        output = execute("%s nodes" % _rsfcli)
+        output = execute("%s status" % _rsfcli)
     except Exception, e:
         logger.error("Failed to determine appliance RSF partner")
         logger.debug(str(e), exc_info=True)
@@ -497,11 +498,13 @@ def _get_rsf_partner():
 
     # Parse the output for the partner hostname
     for l in output.splitlines():
-        # Some versions of this command contain the '*' character at the end
-        # of line so we split on spaces
-        host = l.split()[0]
-        if host != hostname:
-            partner = host
+        if l.startswith("Host"):
+            hosts.append(l.split()[1].strip())
+
+    # Determine which clustered host is the partner
+    for h in hosts:
+        if h != hostname:
+            partner = h
             break
 
     if partner is None:
