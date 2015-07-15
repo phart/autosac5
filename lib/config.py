@@ -234,11 +234,17 @@ def get_domain_conf_3():
                            "configuration")
 
     # Parse out domain name, DC hostname and IP
-    name, dc = output.splitlines()[1:3]
-    domain["domain_name"] = name.split()[1].lstrip("[").rstrip("]")
-    dc_name, dc_addr = dc.split()
-    domain["dc_name"] = dc_name.lstrip("[+").rstrip("]")
-    domain["dc_addr"] = dc_addr.lstrip("[").rstrip("]")
+    try:
+        name, dc = output.splitlines()[1:3]
+        domain["domain_name"] = name.split()[1].strip("[]")
+        domain["dc_name"], domain["dc_addr"] = [x.strip("[+]")
+                                                for x in dc.split()]
+    # If we aren't joined to a domain list will return a single line
+    except Exception, e:
+        logger.error("No domain configuration defined")
+        logger.debug(output)
+        logger.debug(str(e), exc_info=True)
+        raise RuntimeError("No domain configuration defined")
 
     # Log and raise an exception if the dict is empty
     # In theory if we make it this far domain should not be empty
