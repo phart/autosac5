@@ -20,7 +20,7 @@ from lib.execute import execute, Retcode
 from lib.prompt import prompt_yn
 from lib.checks import *
 
-version = "1.1.1"
+version = "1.1.2"
 output_d = "/var/tmp/go-live"
 output_f = "nexenta-autosac-%s.json" \
                % time.strftime('%Y%m%d.%H%M%S', time.localtime(time.time()))
@@ -112,7 +112,7 @@ def write_output(f, output):
 
     # Dump the output dictionary in JSON format to the file
     try:
-        simplejson.dump(output, fh, indent=4 * ' ')
+        simplejson.dump(output, fh, indent=4)
     except Exception, e:
         logger.error("Failed to write output to file")
         logger.error(str(e))
