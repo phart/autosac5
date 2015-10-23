@@ -325,6 +325,11 @@ def check_disk_perf(bs=32, duration=5, workers=8):
     results = Queue()
     check = {}
 
+    # This check doesn't run on v3 due to an old suprocess module
+    vers = get_major_vers()
+    if vers == 3:
+        raise RuntimeError("Not supported on version 3.x")
+
     def worker():
         # Iterate over queue
         while True:
