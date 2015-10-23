@@ -15,7 +15,7 @@ import logging
 from threading import Thread
 from diskqual import r_seq
 from Queue import Queue, Empty
-from execute import execute, execute_nmc, Retcode, Timeout
+from execute import execute, execute_nmc, execute_ssh, Retcode, Timeout
 from config import *
 
 
@@ -92,6 +92,34 @@ def check_dns_ping():
 
     return check
 
+
+def check_time_delta():
+    """
+    Check the time delta between cluster nodes.
+
+    Inputs:
+        delta (int): Max allowable time delta
+    Outputs:
+        check (dict): Check results
+    """
+    check = {
+        "status": None,
+        "delta": None
+    }
+    _, partner, _ = get_rsf_conf()
+    try:
+        ptime = int(execute("date +%s"))
+        logger.debug("Partner time is %d" % ptime)
+        ltime = int(execute_ssh("date +%s", partner))
+        logger.debug("Local time is %d" % ltime)
+        delta = abs(ltime - ptime)
+    except:
+        raise
+    else:
+        check["status"] = True
+        check["delta"] = delta
+
+    return check
 
 def check_nmv_access():
     """
