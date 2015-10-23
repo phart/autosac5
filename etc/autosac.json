@@ -63,6 +63,13 @@
         "kwargs": {}
     },
     {
+        "name": "check_time_delta",
+        "enabled": true,
+        "f": "check_time_delta",
+        "args": [],
+        "kwargs": {}
+    },
+    {
         "name": "check_disk_perf",
         "enabled": true,
         "f": "check_disk_perf",

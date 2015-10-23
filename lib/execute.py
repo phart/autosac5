@@ -123,3 +123,26 @@ def execute_nmc(cmd, timeout=None):
         raise
 
     return output
+
+
+def execute_ssh(cmd, host, timeout=None):
+    """
+    Execute a command remotely. If a timeout is defined the command
+    will be killed when the timeout is exceeded.
+
+    Inputs:
+        cmd     (str): NMC command to execute
+        host    (str): Remote hostname or IP
+        timeout (int): Command timeout in seconds
+    Outputs:
+        retcode  (int): Return code
+        output  (list): STDOUT/STDERR
+    """
+    ssh = "ssh %s \"%s\"" % (host, cmd)
+
+    try:
+        output = execute(ssh, timeout)
+    except:
+        raise
+
+    return output
