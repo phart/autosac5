@@ -5,7 +5,7 @@ config.py
 
 Parse system configuration.
 
-Copyright (c) 2015  Nexenta Systems
+Copyright (c) 2016  Nexenta Systems
 William Kettler <william.kettler@nexenta.com>
 """
 

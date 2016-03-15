@@ -5,7 +5,7 @@ prompt.py
 
 A collection of functions for prompting the user for input.
 
-Copyright (C) 2014  Nexenta Systems
+Copyright (C) 2016  Nexenta Systems
 William Kettler <william.kettler@nexenta.com>
 """
 

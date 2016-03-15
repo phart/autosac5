@@ -5,7 +5,7 @@ execute.py
 
 Execute commands.
 
-Copyright (C) 2015  Nexenta Systems
+Copyright (C) 2016  Nexenta Systems
 William Kettler <william.kettler@nexenta.com>
 """
 

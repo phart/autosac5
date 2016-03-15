@@ -5,7 +5,7 @@ autosac
 
 Automated Support Acceptability Checklist
 
-Copyright (c) 2015  Nexenta Systems
+Copyright (c) 2016  Nexenta Systems
 William Kettler <william.kettler@nexenta.com>
 """
 
@@ -20,7 +20,7 @@ from lib.execute import execute, Retcode
 from lib.prompt import prompt_yn
 from lib.checks import *
 
-version = "1.2.0"
+version = "1.2.1"
 output_d = "/var/tmp/go-live"
 output_f = "nexenta-autosac-%s.json" \
                % time.strftime('%Y%m%d.%H%M%S', time.localtime(time.time()))
