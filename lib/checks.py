@@ -108,9 +108,9 @@ def check_time_delta():
     }
     _, partner, _ = get_rsf_conf()
     try:
-        ptime = int(execute("date +%s"))
+        ptime = int(execute("date +%s").splitlines()[-1])
         logger.debug("Partner time is %d" % ptime)
-        ltime = int(execute_ssh("date +%s", partner))
+        ltime = int(execute_ssh("date +%s", partner).splitlines()[-1])
         logger.debug("Local time is %d" % ltime)
         delta = abs(ltime - ptime)
     except:
@@ -120,6 +120,7 @@ def check_time_delta():
         check["delta"] = delta
 
     return check
+
 
 def check_nmv_access():
     """

@@ -20,7 +20,7 @@ from lib.execute import execute, Retcode
 from lib.prompt import prompt_yn
 from lib.checks import *
 
-version = "1.2.1"
+version = "1.2.2"
 output_d = "/var/tmp/go-live"
 output_f = "nexenta-autosac-%s.json" \
                % time.strftime('%Y%m%d.%H%M%S', time.localtime(time.time()))
