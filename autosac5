@@ -15,13 +15,13 @@ import logging
 import logging.config
 import json
 import getpass
-import lib.execute as execute
 import lib.prompt as prompt
+from lib.execute import execute, RetcodeError
 from lib.nefclient import NEFClient
 from lib.checks import *
 
 
-__version__ = "5.1.0.2"
+__version__ = "5.1.0.3"
 
 # This is a hack to avoid complex passing of API useranme, password, and url
 # to the nefclient module
@@ -58,8 +58,8 @@ def reboot():
     if prompt.prompt_yn("Reboot now?"):
         logger.warn("Rebooting!")
         try:
-            execute.execute("reboot")
-        except execute.RetcodeError as r:
+            execute("reboot")
+        except RetcodeError as r:
             logger.error("Reboot failed")
             logger.error(str(r))
     else:
@@ -168,7 +168,7 @@ def main():
         logger.error("Failed to determine the management address")
         logger.error(str(e))
         sys.exit(1)
-    logger.debug("The API url is %s", url)
+    logger.info("The API url is %s", url)
 
     # Prompt for the API username and password
     global username
