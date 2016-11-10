@@ -17,6 +17,7 @@ import json
 import getpass
 import lib.execute as execute
 import lib.prompt as prompt
+from lib.execute import execute, RetcodeError
 from lib.nefclient import NEFClient
 from lib.checks import *
 
@@ -58,8 +59,8 @@ def reboot():
     if prompt.prompt_yn("Reboot now?"):
         logger.warn("Rebooting!")
         try:
-            execute.execute("reboot")
-        except execute.RetcodeError as r:
+            execute("reboot")
+        except RetcodeError as r:
             logger.error("Reboot failed")
             logger.error(str(r))
     else:
