@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 prompt.py
 
@@ -14,42 +12,42 @@ def prompt_continue():
     """
     Prompt the user to hit ENTER to continue.
 
-    Input:
+    Args:
         None
-    Output:
+    Returns:
         None
     """
-    raw_input("Please hit ENTER to continue...")
+    input("Please hit ENTER to continue...")
 
 
 def prompt(question, answers):
     """
     Prompt the user with a question and only accept defined answers.
 
-    Input:
+    Args:
         question (str): Question string
         answers (list): A list containing accpeted response value
-    Output:
+    Returns:
         answer (str|int): Provided answer
     """
-    print question
+    print(question)
 
-    # Print a numbered list of answers
+    # print a numbered list of answers
     for i in range(len(answers)):
-        print ' %d. %s' % (i+1, answers[i])
+        print(' %d. %s' % (i+1, answers[i]))
 
     while True:
         # Prompt the user for an integer
         try:
-            choice = int(raw_input(">>> "))
+            choice = int(input(">>> "))
         # A ValueError is raised if the user does not provide an integer
         except ValueError:
-            print "Invalid input."
+            print("Invalid input.")
             continue
 
         # Confirm the integer is positive
         if choice < 1:
-            print "Invalid input."
+            print("Invalid input.")
             continue
 
         # Confirm the provided integer is not out of range
@@ -57,7 +55,7 @@ def prompt(question, answers):
             answer = answers[choice-1]
         # An IndexError is raise when the list index is out of range
         except IndexError:
-            print "Invalid input."
+            print("Invalid input.")
             continue
 
         # If we make it here the answer is valid
@@ -70,13 +68,13 @@ def prompt_yn(question):
     """
     Prompt the user with a yes or no question.
 
-    Input:
+    Args:
         question (str): Question string
-    Output:
+    Returns:
         answer (bool): Answer True/False
     """
     while True:
-        choice = raw_input("%s [y|n] " % question)
+        choice = input("%s [y|n] " % question)
         if choice == "y":
             answer = True
             break
@@ -84,6 +82,6 @@ def prompt_yn(question):
             answer = False
             break
         else:
-            print "Invalid input."
+            print("Invalid input.")
 
     return answer

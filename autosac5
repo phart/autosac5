@@ -1,0 +1,241 @@
+#!/usr/bin/python3.4
+
+"""
+autosac
+
+Automated Support Acceptability Checklist
+
+Copyright (c) 2016  Nexenta Systems
+William Kettler <william.kettler@nexenta.com>
+"""
+
+import getopt
+import sys
+import logging
+import logging.config
+import json
+import getpass
+import lib.execute as execute
+import lib.prompt as prompt
+from lib.nefclient import NEFClient
+from lib.checks import *
+
+
+__version__ = "5.1.0.2"
+
+# This is a hack to avoid complex passing of API useranme, password, and url
+# to the nefclient module
+username = None
+password = None
+url = None
+
+
+# Initialize logger
+logger = logging.getLogger("autosac")
+
+
+def usage():
+    """
+    Print usage.
+    """
+    cmd = sys.argv[0]
+
+    print("%s [-h] [-c CONFIG]", cmd)
+    print("")
+    print("Nexenta AutoSAC (Support Acceptance Check) utility.")
+    print("Version", __version__)
+    print("")
+    print("Arguments:")
+    print("")
+    print("    -h, --help           print usage")
+    print("    -c, --config CONFIG  alternate config file")
+
+
+def reboot():
+    """
+    Reboot the system.
+    """
+    if prompt.prompt_yn("Reboot now?"):
+        logger.warn("Rebooting!")
+        try:
+            execute.execute("reboot")
+        except execute.RetcodeError as r:
+            logger.error("Reboot failed")
+            logger.error(str(r))
+    else:
+        logger.warn("Reboot skipped by the user")
+
+
+def parse_config(f):
+    """
+    Parse the JSON config file.
+
+    Args:
+        f (str): Path to JSON
+    Returns:
+        The configured checks as a dictionary.
+    """
+    required = ["enabled", "name", "f", "args", "kwargs"]
+
+    # Open the configuration file
+    try:
+        fh = open(f)
+    except IOError as i:
+        logger.error("Failed to open the config file")
+        logger.error(str(i))
+        sys.exit(1)
+
+    # Load the configuration file
+    try:
+        checks = json.load(fh)
+    except Exception as e:
+        logger.error("Failed to parse the config file")
+        logger.error(str(e))
+        sys.exit(1)
+    finally:
+        fh.close()
+
+    # Check all required fields are present
+    for c in checks:
+        if (len(set(required) & set(c.keys())) != len(required)):
+            logger.error("The check is missing required objects")
+            logger.error(c)
+            sys.exit(1)
+
+    return checks
+
+
+def write_output(f, output):
+    """
+    Write the output in JSON format to the defined file.
+
+    Args:
+        f (str): Path to output file
+        output (dict): Output dictionary
+    """
+    # Open the output file
+    try:
+        fh = open(f, 'w')
+    except IOError as i:
+        logger.error("Failed to open the output file")
+        logger.error(str(i))
+        sys.exit(1)
+
+    # Dump the output dictionary in JSON format to the file
+    try:
+        json.dump(output, fh, indent=4)
+    except IOError as i:
+        logger.error("Failed to write output to file")
+        logger.error(str(i))
+        sys.exit(1)
+    finally:
+        fh.close()
+
+
+def main():
+    file = "/var/dropbox/nexenta-autosac.json"
+    log = "etc/logging.conf"
+    config = "etc/autosac5.json"
+
+    # Parse command line arguments
+    try:
+        opts, _ = getopt.getopt(sys.argv[1:], ":hc:", ["help", "config="])
+    except getopt.GetoptError as g:
+        print(str(g))
+        usage()
+        sys.exit(2)
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-c", "--config"):
+            config = a
+
+    # Initialize logging
+    logging.config.fileConfig(log)
+
+    # Log the autosac versions
+    logger.info("AutoSAC v%s",  __version__)
+
+    # Read the API url from the system.managementAddress property
+    global url
+    try:
+        output = json.loads(execute("/usr/nef/cli/sbin/config list "
+                                    "system.managementAddress -O json"))
+        url = "https://%s" % output[0]["value"]
+    except Exception as e:
+        logger.error("Failed to determine the management address")
+        logger.error(str(e))
+        sys.exit(1)
+    logger.debug("The API url is %s", url)
+
+    # Prompt for the API username and password
+    global username
+    global password
+    logger.info("Please provide credentials for the local API")
+    username = input("User: ")
+    password = getpass.getpass()
+    try:
+        logger.info("Logging in as user %s", username)
+        nef = NEFClient()
+        nef.get("auth/status")
+    except requests.exceptions.HTTPError as e:
+        logger.error(str(e))
+        sys.exit(1)
+
+    # Parse the config file
+    checks = parse_config(config)
+    logger.debug(checks)
+
+    # Initialize the output dict
+    output = {
+        "version": __version__,
+        "results": {}
+    }
+
+    # Iterate over each check
+    for c in checks:
+        # If the check is disabled log it and continue
+        if not c["enabled"]:
+            logger.warn("Check %s is disabled", c["name"].upper())
+            continue
+
+        # If the log is enabled execute the check as defined in the config
+        logger.info("Check %s in progress", c["name"].upper())
+        try:
+            f = globals()[c["f"]]
+            result = f(*c["args"], **c["kwargs"])
+        # Catch all clause because the script shouldn't barf on the user
+        except Exception as e:
+            #logger.error("Encountered an unhandled exception")
+            logger.error(str(e))
+            logger.debug(str(e), exc_info=True)
+            result = {
+                "success": False,
+                "error": str(e)
+            }
+        output["results"][c["name"]] = {
+            "f": c["f"],
+            "args": c["args"],
+            "kwargs": c["kwargs"],
+            "result": result
+        }
+
+    logger.info("Checks completed")
+
+    # Write the data to the output fije
+    write_output(file, output)
+
+    logger.info("Output saved to %s.", file)
+
+    # Prompt for reboot
+    print("To complete the AutoSAC process a system reboot is required.")
+    reboot()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        logger.warning("Cancelled by user")
+        sys.exit(1)

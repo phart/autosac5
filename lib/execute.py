@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 execute.py
 
@@ -9,6 +7,7 @@ Copyright (C) 2016  Nexenta Systems
 William Kettler <william.kettler@nexenta.com>
 """
 
+import sys
 import subprocess
 import signal
 import logging
@@ -17,18 +16,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class Signal(Exception):
+class _Signal(Exception):
     """
     This exception is raise by the signal handler.
     """
     pass
 
 
-class Timeout(Exception):
+class TimeoutError(Exception):
     """
     This exception is raised when the command exceeds the defined timeout
-    duration and the command is killed.
+    duration.
+
+    Attributes:
+        cmd (str): Command
+        timeout (int): Timeout duration
     """
+
     def __init__(self, cmd, timeout):
         self.cmd = cmd
         self.timeout = timeout
@@ -38,10 +42,16 @@ class Timeout(Exception):
                (self.cmd, self.timeout)
 
 
-class Retcode(Exception):
+class RetcodeError(Exception):
     """
     This exception is raise when a command exits with a non-zero exit status.
+
+    Attributes:
+        cmd (str): Command
+        retcode (int): Command return code
+        output (str): stderr/stdout
     """
+
     def __init__(self, cmd, retcode, output=None):
         self.cmd = cmd
         self.retcode = retcode
@@ -53,7 +63,10 @@ class Retcode(Exception):
 
 
 def alarm_handler(signum, frame):
-    raise Signal
+    """
+    We only get here if the timeout is exceeded.
+    """
+    raise _Signal
 
 
 def execute(cmd, timeout=None):
@@ -61,11 +74,11 @@ def execute(cmd, timeout=None):
     Execute a command in the default shell. If a timeout is defined the command
     will be killed if the timeout is exceeded and an exception will be raised.
 
-    Inputs:
-        cmd     (str): Command to execute
+    Args:
+        cmd (str): Command to execute
         timeout (int): Command timeout in seconds
-    Outputs:
-        output (str): STDOUT/STDERR
+    Returns:
+        The command output which is STDOUT and STDERR merged.
     """
     logger.debug(cmd)
 
@@ -81,12 +94,13 @@ def execute(cmd, timeout=None):
                                    stderr=subprocess.STDOUT)
 
         # Read the stdout/sterr buffers and retcode
-        output, _ = phandle.communicate()
+        boutput, _ = phandle.communicate()
+        output = boutput.decode(sys.stdout.encoding)
         retcode = phandle.poll()
-    except Signal:
+    except _Signal:
         # Kill the running process
         phandle.kill()
-        raise Timeout(cmd=cmd, timeout=timeout)
+        raise TimeoutError(cmd=cmd, timeout=timeout)
     except:
         logger.debug("Unhandled exception", exc_info=True)
         raise
@@ -96,53 +110,8 @@ def execute(cmd, timeout=None):
 
     # Raise an exception if the command exited with non-zero exit status
     if retcode:
-        raise Retcode(cmd, retcode, output=output)
+        raise RetcodeError(cmd, retcode, output=output)
 
     logger.debug(output)
-
-    return output
-
-
-def execute_nmc(cmd, timeout=None):
-    """
-    Execute a command in NMC. If a timeout is defined the command
-    will be killed when the timeout is exceeded.
-
-    Inputs:
-        cmd     (str): NMC command to execute
-        timeout (int): Command timeout in seconds
-    Outputs:
-        retcode  (int): Return code
-        output  (list): STDOUT/STDERR
-    """
-    nmc = "nmc -c \"%s\"" % cmd
-
-    try:
-        output = execute(nmc, timeout)
-    except:
-        raise
-
-    return output
-
-
-def execute_ssh(cmd, host, timeout=None):
-    """
-    Execute a command remotely. If a timeout is defined the command
-    will be killed when the timeout is exceeded.
-
-    Inputs:
-        cmd     (str): NMC command to execute
-        host    (str): Remote hostname or IP
-        timeout (int): Command timeout in seconds
-    Outputs:
-        retcode  (int): Return code
-        output  (list): STDOUT/STDERR
-    """
-    ssh = "ssh %s \"%s\"" % (host, cmd)
-
-    try:
-        output = execute(ssh, timeout)
-    except:
-        raise
 
     return output

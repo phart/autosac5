@@ -1,10 +1,12 @@
 [
     {
-        "name": "check_rsf_failover_to",
+        "name": "check_rsf_move_to",
         "enabled": true,
-        "f": "check_rsf_failover",
+        "f": "check_rsf_move",
         "args": [],
-        "kwargs": {"local": true}
+        "kwargs": {
+            "local": true
+        }
     },
     {
         "name": "check_gateway_ping",
@@ -21,24 +23,19 @@
         "kwargs": {}
     },
     {
-        "name": "check_nmv_access",
-        "enabled": true,
-        "f": "check_nmv_access",
-        "args": [],
-        "kwargs": {}
-    },
-    {
         "name": "check_repo_access",
         "enabled": true,
         "f": "check_cmd",
-        "args": ["apt-get update"],
-        "kwargs": {}
+        "args": ["pkg refresh"],
+        "kwargs": {
+            "timeout": 120
+        }
     },
     {
         "name": "check_mailer",
         "enabled": true,
-        "f": "check_nmc_cmd",
-        "args": ["setup appliance mailer verify"],
+        "f": "check_post",
+        "args": ["test/sendmail"],
         "kwargs": {}
     },
     {
@@ -63,10 +60,26 @@
         "kwargs": {}
     },
     {
-        "name": "check_rsf_failover_from",
-        "enabled": true,
-        "f": "check_rsf_failover",
+        "name": "check_time_delta",
+        "enabled": false,
+        "f": "check_time_delta",
         "args": [],
-        "kwargs": {"local": false}
+        "kwargs": {}
+    },
+    {
+        "name": "check_disk_perf",
+        "enabled": true,
+        "f": "check_disk_perf",
+        "args": [],
+        "kwargs": {}
+    },
+    {
+        "name": "check_rsf_move_from",
+        "enabled": true,
+        "f": "check_rsf_move",
+        "args": [],
+        "kwargs": {
+            "local": false
+        }
     }
 ]
