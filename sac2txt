@@ -276,7 +276,7 @@ def main():
     doc = Document(output)
 
     # Print version
-    doc.print_string("v%s" % j["autosac_version"])
+    doc.print_string("v%s" % j["version"])
 
     # Print title
     doc.print_title("Nexenta AutoSAC")
