@@ -11,7 +11,6 @@ William Kettler <william.kettler@nexenta.com>
 import logging
 import requests
 import json
-import __main__
 
 
 logger = logging.getLogger(__name__)
@@ -31,12 +30,9 @@ class NEFClient(object):
     """
 
     def __init__(self):
-        self.port = 8443
-        # We are grabbing username, password and url from __main__ to avoid
-        # complex passing...this is a dirty hack
-        self.url = ":".join([__main__.url, str(self.port)])
-        self.username = __main__.username
-        self.password = __main__.password
+        self.url = "http://localhost:8080"
+        self.username = None
+        self.password = None
         self.key = None
         self.verify = False
         self.headers = {
@@ -69,14 +65,14 @@ class NEFClient(object):
             response = requests.post("/".join([self.url, method]),
                                      data=payload, verify=self.verify)
             response.raise_for_status()
-            json = response.json()
+            body = response.json()
         # Bookmark until I find out what error handling makes sense
         except:
             raise
 
-        logger.debug(json)
+        logger.debug(body)
 
-        self.key = json["token"]
+        self.key = body["token"]
         self.headers["Authorization"] = "Bearer %s" % self.key
 
     def logout(self):
