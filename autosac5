@@ -14,21 +14,13 @@ import sys
 import logging
 import logging.config
 import json
-import getpass
 import lib.prompt as prompt
 from lib.execute import execute, RetcodeError
 from lib.nefclient import NEFClient
 from lib.checks import *
 
 
-__version__ = "5.1.0.3"
-
-# This is a hack to avoid complex passing of API useranme, password, and url
-# to the nefclient module
-username = None
-password = None
-url = None
-
+__version__ = "5.1.0.4"
 
 # Initialize logger
 logger = logging.getLogger("autosac")
@@ -157,32 +149,6 @@ def main():
 
     # Log the autosac versions
     logger.info("AutoSAC v%s",  __version__)
-
-    # Read the API url from the system.managementAddress property
-    global url
-    try:
-        output = json.loads(execute("/usr/nef/cli/sbin/config list "
-                                    "system.managementAddress -O json"))
-        url = "https://%s" % output[0]["value"]
-    except Exception as e:
-        logger.error("Failed to determine the management address")
-        logger.error(str(e))
-        sys.exit(1)
-    logger.info("The API url is %s", url)
-
-    # Prompt for the API username and password
-    global username
-    global password
-    logger.info("Please provide credentials for the local API")
-    username = input("User: ")
-    password = getpass.getpass()
-    try:
-        logger.info("Logging in as user %s", username)
-        nef = NEFClient()
-        nef.get("auth/status")
-    except requests.exceptions.HTTPError as e:
-        logger.error(str(e))
-        sys.exit(1)
 
     # Parse the config file
     checks = parse_config(config)
