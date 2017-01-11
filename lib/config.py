@@ -143,11 +143,11 @@ def get_rsf():
     try:
         nef = NEFClient()
         body = nef.get(method, params=params)["data"].pop()
+    except IndexError:
+        raise RuntimeError("The node is not part of a cluster")
     except Exception as e:
         logger.debug(str(e), exc_info=True)
         raise RuntimeError("Failed to determine cluster configuration")
-    if not body:
-        raise RuntimeError("The node is not part of a cluster")
 
     # Get and log cluster name
     cluster = body["clusterName"]
