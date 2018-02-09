@@ -67,6 +67,13 @@
         "kwargs": {}
     },
     {
+        "name": "check_metadata_blocks",
+        "enabled": true,
+        "f": "check_metadata_blocks",
+        "args": [],
+        "kwargs": {}
+    },
+    {
         "name": "check_disk_perf",
         "enabled": true,
         "f": "check_disk_perf",

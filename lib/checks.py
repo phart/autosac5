@@ -373,3 +373,42 @@ def check_disk_perf(bs=32, duration=5, workers=8):
             break
 
     return results
+
+
+def check_metadata_blocks():
+    """
+    Verifies zfs_default_ibs is set to 14 (decimal) ; see NEX-15280
+
+    Args:
+        None
+    Returns:
+        The check results
+    """
+    result = {
+        "success": True,
+        "error": None
+    }
+
+    cmd = "echo 'zfs_default_ibs/D' | mdb -k"
+    try:
+        output = execute(cmd, timeout=10)
+    except RetcodeError as r:
+        logger.error("could not execute mdb command")
+        result["success"] = False
+        result["error"] = r.output
+    except TimeoutError as t:
+        logger.error(str(t))
+        result["success"] = False
+        result["error"] = str(t)
+    else:
+        # verify that the value is 14
+        entry = output.split("\n")[1]
+        value = int(entry.split(":")[1])
+        if value != 14:
+            logger.error("zfs_default_ibs is not 14! %s" % entry)
+            result["success"] = False
+            result["error"] = entry
+
+
+    return result
+
